@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alarm Clock</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #ff99cc, #ffe6f0);
+        color: #333;
+        text-align: center;
+        padding: 20px;
+    }
+    h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+    }
+    #current-time {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    .alarm-setter, .alarms-list {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        margin: 15px auto;
+        width: 90%;
+        max-width: 400px;
+    }
+    input, select, button {
+        margin: 10px;
+        padding: 8px;
+        font-size: 1em;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    button {
+        background: #ff66a3;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #ff3385;
+    }
+    .alarm-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .toggle {
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<h1>⏰ Alarm Clock</h1>
+<div id="current-time"></div>
+
+<div class="alarm-setter">
+    <h2>Set New Alarm</h2>
+    <input type="time" id="alarm-time">
+    <select id="alarm-tone">
+        <option value="tone1.mp3">Classic Beep</option>
+        <option value="tone2.mp3">Morning Tune</option>
+        <option value="tone3.mp3">Soft Chime</option>
+    </select>
+    <button onclick="setAlarm()">Set Alarm</button>
+</div>
+
+<div class="alarms-list">
+    <h2>Alarms</h2>
+    <div id="alarms"></div>
+</div>
+
+<audio id="alarm-audio"></audio>
+
+<script>
+    let alarms = [];
+
+    function updateTime() {
+        const now = new Date();
+        document.getElementById("current-time").textContent = 
+            now.toLocaleTimeString() + " | " + now.toDateString();
+        checkAlarms(now);
+    }
+    setInterval(updateTime, 1000);
+
+    function setAlarm() {
+        const time = document.getElementById("alarm-time").value;
+        const tone = document.getElementById("alarm-tone").value;
+        if (!time) return alert("Please set a time for the alarm.");
+
+        alarms.push({ time, tone, active: true });
+        displayAlarms();
+    }
+
+    function displayAlarms() {
+        const list = document.getElementById("alarms");
+        list.innerHTML = "";
+        alarms.forEach((alarm, index) => {
+            list.innerHTML += `
+                <div class="alarm-item">
+                    <span>${alarm.time}</span>
+                    <span>
+                        <input type="checkbox" class="toggle" ${alarm.active ? "checked" : ""} 
+                            onchange="toggleAlarm(${index})">
+                        <button onclick="deleteAlarm(${index})">🗑</button>
+                    </span>
+                </div>
+            `;
+        });
+    }
+
+    function toggleAlarm(index) {
+        alarms[index].active = !alarms[index].active;
+    }
+
+    function deleteAlarm(index) {
+        alarms.splice(index, 1);
+        displayAlarms();
+    }
+
+    function checkAlarms(now) {
+        const currentTime = now.toTimeString().slice(0,5);
+        alarms.forEach((alarm, index) => {
+            if (alarm.active && alarm.time === currentTime) {
+                ringAlarm(alarm.tone);
+                alarm.active = false; // prevents repeating in same minute
+            }
+        });
+    }
+
+    function ringAlarm(tone) {
+        const audio = document.getElementById("alarm-audio");
+        audio.src = tone;
+        audio.loop = true;
+        audio.play();
+
+        // Stop button
+        const stopBtn = document.createElement("button");
+        stopBtn.textContent = "Stop Alarm";
+        stopBtn.style.background = "red";
+        stopBtn.style.color = "white";
+        stopBtn.style.marginTop = "10px";
+        stopBtn.onclick = () => {
+            audio.pause();
+            audio.currentTime = 0;
+            stopBtn.remove();
+        };
+        document.body.appendChild(stopBtn);
+    }
+</script>
+
+</body>
+</html>
